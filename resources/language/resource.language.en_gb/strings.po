@@ -1,0 +1,54 @@
+# Kodi Media Center language file
+# Addon Name: GameFAQs scraper for AEL
+# Addon id: script.ael.gamefaqs
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: en\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+############################
+# Settings categories
+############################
+msgctxt "#30010"
+msgid "General"
+msgstr "settings.xml"
+
+msgctxt "#30011"
+msgid "Advanced"
+msgstr "settings.xml"
+
+############################
+# Settings options
+############################
+msgctxt "#30105"
+msgid "Cache directory"
+msgstr "settings.xml"
+
+msgctxt "#30129"
+msgid "Log level"
+msgstr "settings.xml"
+
+############################
+# Enum values
+############################
+msgctxt "#30911"
+msgid "ERROR"
+msgstr "LOG ENUM"
+
+msgctxt "#30912"
+msgid "WARNING"
+msgstr "LOG ENUM"
+
+msgctxt "#30913"
+msgid "INFO"
+msgstr "LOG ENUM"
+
+msgctxt "#30914"
+msgid "VERBOSE"
+msgstr "LOG ENUM"
+
+msgctxt "#30915"
+msgid "DEBUG"
+msgstr "LOG ENUM"

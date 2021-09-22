@@ -1,0 +1,55 @@
+﻿<?xml version="1.0" ?>
+<settings version="1">
+    <section id="script.ael.gamefaqs">
+        <category id="ael_general" label="30010" help="">
+			<group id="1">
+                <setting id="scraper_cache_dir" type="path" label="30105" help="">
+                    <level>1</level>
+                    <default></default>
+                    <constraints>
+                        <writable>true</writable>
+                        <allowempty>true</allowempty>
+                    </constraints>
+                    <control type="button" format="path">
+                        <heading>30105</heading>
+                    </control>
+                </setting>
+                <setting id="log_level" type="integer" label="30129" help="">
+                    <level>1</level>
+                    <default>1</default>
+                    <constraints>
+                        <options>
+                            <option label="30911">0</option>
+                            <option label="30912">1</option>
+                            <option label="30913">2</option>
+                            <option label="30914">3</option>
+                            <option label="30915">4</option>
+                        </options>
+                    </constraints>
+                    <control type="spinner" format="string"/>
+                </setting>
+                <setting id="ael.enabled" type="boolean" label="Enable as AEL plugin" help="">
+                    <level>4</level>
+                    <default>true</default>
+                    <control type="toggle"/>
+                </setting>
+                <setting id="ael.plugin_types" type="string" label="AEL plugin type(s)" help="">
+                    <level>4</level>
+                    <default>SCRAPER</default>
+                </setting>
+                <setting id="ael.scraper.supported_metadata" type="string" label="Metadata supported by this scraper" help="">
+                    <level>4</level>
+                    <default>title|year|genre|developer|nplayers|plot</default>
+                </setting>
+                <setting id="ael.scraper.supported_assets" type="string" label="Assets supported by this scraper" help="">
+                    <level>4</level>
+                    <default>title|snap|boxfront|flyer</default>
+                </setting>
+                <setting id="ael.scraper.friendlyname" type="string" label="Scraper friendlyname" help="">
+                    <level>4</level>
+                    <default>GameFAQs</default>
+                </setting>
+            </group>
+        </category>
+    </section>
+</settings>
