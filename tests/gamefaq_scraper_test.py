@@ -1,18 +1,22 @@
-import unittest, mock, os, sys
+import unittest, os
+import unittest.mock
+from unittest.mock import MagicMock, patch
 
-from mock import *
-from mock import ANY
-import xml.etree.ElementTree as ET
+import json
+import logging
 
-from resources.utils import *
-from resources.net_IO import *
-from resources.scrap import *
-from resources.objects import *
-from resources.constants import *     
+from fakes import FakeProgressDialog, random_string
 
-from tests.fakes import FakeFile
+logging.basicConfig(format = '%(asctime)s %(module)s %(levelname)s: %(message)s',
+                datefmt = '%m/%d/%Y %I:%M:%S %p', level = logging.DEBUG)
+logger = logging.getLogger(__name__)
 
-FileName = FakeFile   
+from resources.lib.scraper import GameFAQs
+from ael.scrapers import ScrapeStrategy, ScraperSettings
+
+from ael.api import ROMObj
+from ael import constants
+from ael.utils import net
         
 def read_file(path):
     with open(path, 'r') as f:
@@ -42,7 +46,7 @@ def mocked_gamesfaq(url, params = None):
         return read_file(Test_gamefaq_scraper.TEST_ASSETS_DIR + "\\test.jpg")
 
     if mocked_html_file == '':
-        return net_get_URL_oneline(url)
+        return net.get_URL_oneline(url)
 
     print ('reading mocked data from file: {}'.format(mocked_html_file))
     return read_file(mocked_html_file)
@@ -55,8 +59,6 @@ class Test_gamefaq_scraper(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        set_log_level(LOG_DEBUG)
-
         cls.TEST_DIR = os.path.dirname(os.path.abspath(__file__))
         cls.ROOT_DIR = os.path.abspath(os.path.join(cls.TEST_DIR, os.pardir))
         cls.TEST_ASSETS_DIR = os.path.abspath(os.path.join(cls.TEST_DIR,'assets/'))
@@ -65,60 +67,65 @@ class Test_gamefaq_scraper(unittest.TestCase):
         print('TEST DIR: {}'.format(cls.TEST_DIR))
         print('TEST ASSETS DIR: {}'.format(cls.TEST_ASSETS_DIR))
         print('---------------------------------------------------------------------------')
-
-    def get_test_settings(self):
-        settings = {}
-        settings['scan_metadata_policy'] = 3 # OnlineScraper only
-        settings['scan_asset_policy'] = 0
-        settings['metadata_scraper_mode'] = 1
-        settings['asset_scraper_mode'] = 1
-        settings['scan_clean_tags'] = True
-        settings['scan_ignore_scrap_title'] = False
-        settings['scraper_metadata'] = 0 # NullScraper
-        settings['thegamesdb_apikey'] = 'abc123'
-        settings['escape_romfile'] = False
-
-        return settings
-
-    @patch('resources.scrap.net_get_URL', side_effect = mocked_gamesfaq)
-    @patch('resources.scrap.net_post_URL', side_effect = mocked_gamesfaq)
-    def test_scraping_metadata_for_game(self, mock_htmlpost_downloader, mock_html_downloader):
         
+    @patch('resources.lib.scraper.net.get_URL', side_effect = mocked_gamesfaq)
+    @patch('resources.lib.scraper.net.post_URL', side_effect = mocked_gamesfaq)
+    @patch('ael.api.client_get_rom')
+    def test_scraping_metadata_for_game(self, api_rom_mock: MagicMock, mock_post, mock_get):        
         # arrange
-        settings = self.get_test_settings()
-        status_dic = {}
-        target = GameFAQs(settings)
+        settings = ScraperSettings()
+        settings.scrape_metadata_policy = constants.SCRAPE_POLICY_SCRAPE_ONLY
+        settings.scrape_assets_policy = constants.SCRAPE_ACTION_NONE
+        
+        rom_id = random_string(5)
+        rom = ROMObj({
+            'id': rom_id,
+            'filename': Test_gamefaq_scraper.TEST_ASSETS_DIR + '\\castlevania.zip',
+            'platform': 'Nintendo NES'
+        })
+        api_rom_mock.return_value = rom
+        
+        target = ScrapeStrategy(None, 0, settings, GameFAQs(), FakeProgressDialog())
 
         # act
-        candidates = target.get_candidates('castlevania', 'castlevania', 'Nintendo NES', status_dic)
-        actual = target.get_metadata(candidates[0], status_dic)
-                
+        actual = target.process_single_rom(rom_id)
+        
         # assert
         self.assertTrue(actual)
-        self.assertEqual(u'Castlevania', actual['title'])
-        print(actual)
+        self.assertEqual(u'Castlevania', actual.get_name())
+        print(actual.get_data_dic())
 
-    @patch('resources.scrap.net_get_URL', side_effect = mocked_gamesfaq)
-    @patch('resources.scrap.net_post_URL', side_effect = mocked_gamesfaq)
-    @patch('resources.scrap.net_download_img')
-    def test_scraping_assets_for_game(self, mock_img_downloader, mock_htmlpost_downloader, mock_html_downloader):
-
+    @patch('resources.lib.scraper.net.get_URL', side_effect = mocked_gamesfaq)
+    @patch('resources.lib.scraper.net.post_URL', side_effect = mocked_gamesfaq)
+    @patch('resources.lib.scraper.net.download_img')
+    @patch('ael.api.client_get_rom')
+    def test_scraping_assets_for_game(self, api_rom_mock: MagicMock, mock_imgs, mock_post, mock_get):
         # arrange
-        settings = self.get_test_settings()
-        status_dic = {}
-        assets_to_scrape = [g_assetFactory.get_asset_info(ASSET_BOXFRONT_ID), g_assetFactory.get_asset_info(ASSET_SNAP_ID)]
+        settings = ScraperSettings()
+        settings.scrape_metadata_policy = constants.SCRAPE_ACTION_NONE
+        settings.scrape_assets_policy = constants.SCRAPE_POLICY_SCRAPE_ONLY
+        settings.asset_IDs_to_scrape = [constants.ASSET_BOXFRONT_ID, constants.ASSET_SNAP_ID ]
         
-        target = GameFAQs(settings)
+        rom_id = random_string(5)
+        rom = ROMObj({
+            'id': rom_id,
+            'filename': Test_gamefaq_scraper.TEST_ASSETS_DIR + '\\castlevania.zip',
+            'platform': 'Nintendo NES'
+        })
+        api_rom_mock.return_value = rom
+        
+        target = ScrapeStrategy(None, 0, settings, GameFAQs(), FakeProgressDialog())
 
         # act
-        actuals = []
-        candidates = target.get_candidates('castlevania', 'castlevania', 'Nintendo NES', status_dic)   
-        for asset_to_scrape in assets_to_scrape:
-            an_actual = target.get_assets(candidates[0], asset_to_scrape, status_dic)
-            actuals.append(an_actual)
-                
+        actual = target.process_single_rom(rom_id)
+
         # assert
-        for actual in actuals:
-            self.assertTrue(actual)
+        self.assertTrue(actual)     
         
-        print(actuals)       
+        actual_data = actual.get_data_dic()
+        actual_assets = actual_data['assets']
+                
+        self.assertTrue(actual_assets)     
+        #self.assertEqual(100, len(actual_assets))
+        for actual_key, actual_value in actual_assets.items():
+            logger.info('{} = {}'.format(actual_key, actual_value))
