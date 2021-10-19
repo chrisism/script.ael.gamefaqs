@@ -18,7 +18,7 @@ from __future__ import unicode_literals
 from __future__ import division
 
 import logging
-import json
+import re
 
 # --- AEL packages ---
 from ael import constants, settings

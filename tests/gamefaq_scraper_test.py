@@ -98,8 +98,9 @@ class Test_gamefaq_scraper(unittest.TestCase):
     @patch('resources.lib.scraper.net.get_URL', side_effect = mocked_gamesfaq)
     @patch('resources.lib.scraper.net.post_URL', side_effect = mocked_gamesfaq)
     @patch('resources.lib.scraper.net.download_img')
+    @patch('resources.lib.scraper.io.FileName.scanFilesInPath', autospec=True)
     @patch('ael.api.client_get_rom')
-    def test_scraping_assets_for_game(self, api_rom_mock: MagicMock, mock_imgs, mock_post, mock_get):
+    def test_scraping_assets_for_game(self, api_rom_mock: MagicMock, scanner_mock, mock_imgs, mock_post, mock_get):
         # arrange
         settings = ScraperSettings()
         settings.scrape_metadata_policy = constants.SCRAPE_ACTION_NONE
@@ -110,7 +111,12 @@ class Test_gamefaq_scraper(unittest.TestCase):
         rom = ROMObj({
             'id': rom_id,
             'filename': Test_gamefaq_scraper.TEST_ASSETS_DIR + '\\castlevania.zip',
-            'platform': 'Nintendo NES'
+            'platform': 'Nintendo NES',
+            'assets': {key: '' for key in constants.ROM_ASSET_ID_LIST},
+            'asset_paths': {
+                constants.ASSET_BOXFRONT_ID: '/fronts/',
+                constants.ASSET_SNAP_ID: '/snaps/'
+            }
         })
         api_rom_mock.return_value = rom
         
@@ -120,12 +126,11 @@ class Test_gamefaq_scraper(unittest.TestCase):
         actual = target.process_single_rom(rom_id)
 
         # assert
-        self.assertTrue(actual)     
+        self.assertTrue(actual) 
+        logger.info(actual.get_data_dic()) 
         
-        actual_data = actual.get_data_dic()
-        actual_assets = actual_data['assets']
-                
-        self.assertTrue(actual_assets)     
-        #self.assertEqual(100, len(actual_assets))
-        for actual_key, actual_value in actual_assets.items():
-            logger.info('{} = {}'.format(actual_key, actual_value))
+        self.assertTrue(actual.entity_data['assets'][constants.ASSET_BOXFRONT_ID], 'No boxfront defined')
+        self.assertTrue(actual.entity_data['assets'][constants.ASSET_SNAP_ID], 'No snap defined')      
+
+if __name__ == '__main__':
+    unittest.main()
