@@ -1,9 +1,9 @@
 import os
 import random 
 
-from ael.utils import io
-from ael.executors import ExecutorABC
-from ael.utils.kodi import ProgressDialog
+from akl.utils import io
+from akl.executors import ExecutorABC
+from akl.utils.kodi import ProgressDialog
 
 def random_string(length:int):
     return ''.join(random.choice([chr(i) for i in range(ord('a'),ord('z'))]) for _ in range(length))

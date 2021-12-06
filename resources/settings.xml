@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" ?>
 <settings version="1">
-    <section id="script.ael.gamefaqs">
-        <category id="ael_general" label="30010" help="">
+    <section id="script.akl.gamefaqs">
+        <category id="akl_general" label="30010" help="">
 			<group id="1">
                 <setting id="scraper_cache_dir" type="path" label="30105" help="">
                     <level>1</level>
@@ -28,24 +28,24 @@
                     </constraints>
                     <control type="spinner" format="string"/>
                 </setting>
-                <setting id="ael.enabled" type="boolean" label="Enable as AEL plugin" help="">
+                <setting id="akl.enabled" type="boolean" label="Enable as AKL plugin" help="">
                     <level>4</level>
                     <default>true</default>
                     <control type="toggle"/>
                 </setting>
-                <setting id="ael.plugin_types" type="string" label="AEL plugin type(s)" help="">
+                <setting id="akl.plugin_types" type="string" label="AKL plugin type(s)" help="">
                     <level>4</level>
                     <default>SCRAPER</default>
                 </setting>
-                <setting id="ael.scraper.supported_metadata" type="string" label="Metadata supported by this scraper" help="">
+                <setting id="akl.scraper.supported_metadata" type="string" label="Metadata supported by this scraper" help="">
                     <level>4</level>
                     <default>title|year|genre|developer|nplayers|plot</default>
                 </setting>
-                <setting id="ael.scraper.supported_assets" type="string" label="Assets supported by this scraper" help="">
+                <setting id="akl.scraper.supported_assets" type="string" label="Assets supported by this scraper" help="">
                     <level>4</level>
                     <default>title|snap|boxfront|flyer</default>
                 </setting>
-                <setting id="ael.scraper.friendlyname" type="string" label="Scraper friendlyname" help="">
+                <setting id="akl.scraper.friendlyname" type="string" label="Scraper friendlyname" help="">
                     <level>4</level>
                     <default>GameFAQs</default>
                 </setting>

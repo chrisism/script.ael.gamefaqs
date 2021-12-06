@@ -1,2 +1,2 @@
-# script.ael.gamefaqs
-GameFaqs scraper plugin for AEL
+# script.akl.gamefaqs
+GameFaqs scraper plugin for AKL

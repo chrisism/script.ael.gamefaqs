@@ -12,11 +12,11 @@ logging.basicConfig(format = '%(asctime)s %(module)s %(levelname)s: %(message)s'
 logger = logging.getLogger(__name__)
 
 from resources.lib.scraper import GameFAQs
-from ael.scrapers import ScrapeStrategy, ScraperSettings
+from akl.scrapers import ScrapeStrategy, ScraperSettings
 
-from ael.api import ROMObj
-from ael import constants
-from ael.utils import net
+from akl.api import ROMObj
+from akl import constants
+from akl.utils import net
         
 def read_file(path):
     with open(path, 'r') as f:
@@ -70,7 +70,7 @@ class Test_gamefaq_scraper(unittest.TestCase):
         
     @patch('resources.lib.scraper.net.get_URL', side_effect = mocked_gamesfaq)
     @patch('resources.lib.scraper.net.post_URL', side_effect = mocked_gamesfaq)
-    @patch('ael.api.client_get_rom')
+    @patch('akl.api.client_get_rom')
     def test_scraping_metadata_for_game(self, api_rom_mock: MagicMock, mock_post, mock_get):        
         # arrange
         settings = ScraperSettings()
@@ -99,7 +99,7 @@ class Test_gamefaq_scraper(unittest.TestCase):
     @patch('resources.lib.scraper.net.post_URL', side_effect = mocked_gamesfaq)
     @patch('resources.lib.scraper.net.download_img')
     @patch('resources.lib.scraper.io.FileName.scanFilesInPath', autospec=True)
-    @patch('ael.api.client_get_rom')
+    @patch('akl.api.client_get_rom')
     def test_scraping_assets_for_game(self, api_rom_mock: MagicMock, scanner_mock, mock_imgs, mock_post, mock_get):
         # arrange
         settings = ScraperSettings()

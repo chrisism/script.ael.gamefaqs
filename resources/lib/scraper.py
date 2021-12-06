@@ -20,10 +20,10 @@ from __future__ import division
 import logging
 import re
 
-# --- AEL packages ---
-from ael import constants, settings
-from ael.utils import io, net
-from ael.scrapers import Scraper
+# --- AKL packages ---
+from akl import constants, settings
+from akl.utils import io, net
+from akl.scrapers import Scraper
 
 logger = logging.getLogger(__name__)
 
@@ -84,7 +84,7 @@ class GameFAQs(Scraper):
     def check_before_scraping(self, status_dic): return status_dic
 
     def get_candidates(self, search_term, rom_FN:io.FileName, rom_checksums_FN, platform, status_dic):
-        scraper_platform = AEL_platform_to_GameFAQs(platform)
+        scraper_platform = AKL_platform_to_GameFAQs(platform)
         rombase_noext = rom_FN.getBaseNoExt()
         logger.debug('GameFAQs.get_candidates() search_term      "{0}"'.format(search_term))
         logger.debug('GameFAQs.get_candidates() rombase_noext    "{0}"'.format(rombase_noext))

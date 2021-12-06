@@ -1,7 +1,7 @@
 #!/usr/bin/python -B
 # -*- coding: utf-8 -*-
 
-# Test AEL GameFAQs metadata scraper.
+# Test AKL GameFAQs metadata scraper.
 #
 # --- GameGAQs test URLs ---
 # https://gamefaqs.gamespot.com/snes/519824-super-mario-world
@@ -21,8 +21,8 @@ logging.basicConfig(format = '%(asctime)s %(module)s %(levelname)s: %(message)s'
 logger = logging.getLogger(__name__)
 
 from resources.lib.scraper import GameFAQs
-from ael.utils import kodi, io
-from ael import constants
+from akl.utils import kodi, io
+from akl import constants
 
 # --- Test data -----------------------------------------------------------------------------------
 games = {
