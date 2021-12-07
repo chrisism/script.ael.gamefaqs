@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Advanced Emulator Launcher scraping engine for GameFAQs.
+# Advanced Kodi Launcher scraping engine for GameFAQs.
 
 # Copyright (c) 2020-2021 Chrisism
 #
