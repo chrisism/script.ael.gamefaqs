@@ -14,6 +14,7 @@ from __future__ import unicode_literals
 import os
 import unittest
 import unittest.mock
+from unittest.mock import patch, MagicMock
 import logging
 
 logging.basicConfig(format = '%(asctime)s %(module)s %(levelname)s: %(message)s',
@@ -22,6 +23,7 @@ logger = logging.getLogger(__name__)
 
 from resources.lib.scraper import GameFAQs
 from akl.utils import kodi, io
+from akl.api import ROMObj
 from akl import constants
 
 # --- Test data -----------------------------------------------------------------------------------
@@ -46,14 +48,41 @@ games = {
 
 class Test_gamefaq_metadata_and_assets(unittest.TestCase):
     
-    def test_gamefaq_metadata(self):   
+    
+    ROOT_DIR = ''
+    TEST_DIR = ''
+    TEST_ASSETS_DIR = ''
+    TEST_OUTPUT_DIR = ''
+
+    @classmethod
+    def setUpClass(cls):        
+        cls.TEST_DIR = os.path.dirname(os.path.abspath(__file__))
+        cls.ROOT_DIR = os.path.abspath(os.path.join(cls.TEST_DIR, os.pardir))
+        cls.TEST_ASSETS_DIR = os.path.abspath(os.path.join(cls.TEST_DIR,'assets/'))
+        cls.TEST_OUTPUT_DIR = os.path.abspath(os.path.join(cls.TEST_DIR,'output/'))
+                
+        print('ROOT DIR: {}'.format(cls.ROOT_DIR))
+        print('TEST DIR: {}'.format(cls.TEST_DIR))
+        print('TEST ASSETS DIR: {}'.format(cls.TEST_ASSETS_DIR))
+        print('TEST OUTPUT DIR: {}'.format(cls.TEST_OUTPUT_DIR))
+        print('---------------------------------------------------------------------------')
+
+        if not os.path.exists(cls.TEST_OUTPUT_DIR):
+            os.makedirs(cls.TEST_OUTPUT_DIR)
+    
+    @patch('akl.settings.getSettingAsFilePath', autospec=True)
+    @patch('akl.settings.getSetting', autospec=True)
+    def test_gamefaq_metadata(self, settings_mock:MagicMock, settings_path_mock:MagicMock):   
+        settings_path_mock.return_value = io.FileName(self.TEST_OUTPUT_DIR,isdir=True)
+        settings_mock.return_value = None
+        
         # --- main ---------------------------------------------------------------------------------------
         print('*** Fetching candidate game list ********************************************************')
 
         # --- Create scraper object ---
         scraper_obj = GameFAQs()
         scraper_obj.set_verbose_mode(False)
-        scraper_obj.set_debug_file_dump(True, os.path.join(os.path.dirname(__file__), 'assets'))
+        scraper_obj.set_debug_file_dump(True, self.TEST_OUTPUT_DIR)
         status_dic = kodi.new_status_dic('Scraper test was OK')
 
         # --- Choose data for testing ---
@@ -65,14 +94,27 @@ class Test_gamefaq_metadata_and_assets(unittest.TestCase):
         # search_term, rombase, platform = common.games['console_wrong_title']
         # search_term, rombase, platform = common.games['console_wrong_platform']
 
+        subject = ROMObj({
+            'id': '1234',
+            'scanned_data': {
+                'identifier': search_term,
+                'file': f'/roms/{rombase}'
+            },
+            'platform': platform,
+            'assets': {key: '' for key in constants.ROM_ASSET_ID_LIST},
+            'asset_paths': {
+                constants.ASSET_TITLE_ID: '/titles/',
+            }
+        })
+
         # --- Get candidates, print them and set first candidate ---
         rom_FN = io.FileName(rombase)
-        rom_checksums_FN = io.FileName(rombase)
-        if scraper_obj.check_candidates_cache(rom_FN, platform):
+        if scraper_obj.check_candidates_cache(rom_FN.getBase(), platform):
             print('>>>> Game "{}" "{}" in disk cache.'.format(rom_FN.getBase(), platform))
         else:
             print('>>>> Game "{}" "{}" not in disk cache.'.format(rom_FN.getBase(), platform))
-        candidate_list = scraper_obj.get_candidates(search_term, rom_FN, rom_checksums_FN, platform, status_dic)
+
+        candidate_list = scraper_obj.get_candidates(search_term, subject, platform, status_dic)
         # pprint.pprint(candidate_list)
         self.assertTrue(status_dic['status'], 'Status error "{}"'.format(status_dic['msg']))
         self.assertIsNotNone(candidate_list, 'Error/exception in get_candidates()')
@@ -81,23 +123,28 @@ class Test_gamefaq_metadata_and_assets(unittest.TestCase):
         for candidate in candidate_list:
             print(candidate)
             
-        scraper_obj.set_candidate(rom_FN, platform, candidate_list[0])
+        scraper_obj.set_candidate(rom_FN.getBase(), platform, candidate_list[0])
 
         # --- Print metadata of first candidate ----------------------------------------------------------
         print('*** Fetching game metadata **************************************************************')
         metadata = scraper_obj.get_metadata(status_dic)
-        # pprint.pprint(metadata)
         print(metadata)
+        # pprint.pprint(metadata)
         scraper_obj.flush_disk_cache()
 
-    def test_gamefaq_assets(self):
+    @patch('akl.settings.getSettingAsFilePath', autospec=True)
+    @patch('akl.settings.getSetting', autospec=True)
+    def test_gamefaq_assets(self, settings_mock:MagicMock, settings_path_mock:MagicMock):
+        settings_path_mock.return_value = io.FileName(self.TEST_OUTPUT_DIR,isdir=True)
+        settings_mock.return_value = None
+        
         # --- main ---------------------------------------------------------------------------------------
         print('*** Fetching candidate game list ********************************************************')
         
         # --- Create scraper object ---
         scraper_obj = GameFAQs()
         scraper_obj.set_verbose_mode(False)
-        scraper_obj.set_debug_file_dump(True, os.path.join(os.path.dirname(__file__), 'assets'))
+        scraper_obj.set_debug_file_dump(True, self.TEST_OUTPUT_DIR)
         status_dic = kodi.new_status_dic('Scraper test was OK')
 
         # --- Choose data for testing ---
@@ -109,14 +156,27 @@ class Test_gamefaq_metadata_and_assets(unittest.TestCase):
         # search_term, rombase, platform = common.games['console_wrong_title']
         # search_term, rombase, platform = common.games['console_wrong_platform']
 
+        subject = ROMObj({
+            'id': '1234',
+            'scanned_data': {
+                'identifier': search_term,
+                'file': f'/roms/{rombase}'
+            },
+            'platform': platform,
+            'assets': {key: '' for key in constants.ROM_ASSET_ID_LIST},
+            'asset_paths': {
+                constants.ASSET_TITLE_ID: '/titles/',
+            }
+        })
+
         # --- Get candidates, print them and set first candidate ---
         rom_FN = io.FileName(rombase)
-        rom_checksums_FN = io.FileName(rombase)
-        if scraper_obj.check_candidates_cache(rom_FN, platform):
+        if scraper_obj.check_candidates_cache(rom_FN.getBase(), platform):
             print('>>>> Game "{}" "{}" in disk cache.'.format(rom_FN.getBase(), platform))
         else:
             print('>>>> Game "{}" "{}" not in disk cache.'.format(rom_FN.getBase(), platform))
-        candidate_list = scraper_obj.get_candidates(search_term, rom_FN, rom_checksums_FN, platform, status_dic)
+
+        candidate_list = scraper_obj.get_candidates(search_term, subject, platform, status_dic)
         # pprint.pprint(candidate_list)
         self.assertTrue(status_dic['status'], 'Status error "{}"'.format(status_dic['msg']))
         self.assertIsNotNone(candidate_list, 'Error/exception in get_candidates()')
@@ -125,7 +185,7 @@ class Test_gamefaq_metadata_and_assets(unittest.TestCase):
         for candidate in candidate_list:
             print(candidate)
             
-        scraper_obj.set_candidate(rom_FN, platform, candidate_list[0])
+        scraper_obj.set_candidate(rom_FN.getBase(), platform, candidate_list[0])
 
         # --- Print list of assets found -----------------------------------------------------------------
         print('*** Fetching game assets ****************************************************************')

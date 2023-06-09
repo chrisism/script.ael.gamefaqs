@@ -22,7 +22,7 @@ def read_file(path):
     with open(path, 'r') as f:
         return f.read()
 
-def mocked_gamesfaq(url, params = None):
+def mocked_gamesfaq(url, params = None, session = None):
 
     mocked_html_file = ''
 
@@ -49,7 +49,7 @@ def mocked_gamesfaq(url, params = None):
         return net.get_URL_oneline(url)
 
     print ('reading mocked data from file: {}'.format(mocked_html_file))
-    return read_file(mocked_html_file)
+    return read_file(mocked_html_file), 200
 
 class Test_gamefaq_scraper(unittest.TestCase):
     

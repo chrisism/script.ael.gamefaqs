@@ -141,7 +141,7 @@ class GameFAQs(Scraper):
         # --- Grab game information page ---
         cid = self.candidate['id']
         self.logger.debug(f'GameFAQs._scraper_get_metadata() Get metadata from {cid}')
-        page_data = net.get_URL(f'{GameFAQs.base_url}/{cid}')
+        page_data, http_code = net.get_URL(f'{GameFAQs.base_url}/{cid}')
         self._dump_file_debug('GameFAQs_get_metadata.html', page_data)
         page_data = page_data.replace("\t", "").replace("\n", "")
 
@@ -199,7 +199,7 @@ class GameFAQs(Scraper):
         url = f"{GameFAQs.base_url}{selected_asset['url']}"
         asset_id = selected_asset['asset_ID']
         self.logger.debug(f'GameFAQs._scraper_resolve_asset_URL() Get image from "{url}" for asset type {asset_id}')
-        page_data = net.get_URL(url)
+        page_data, http_code = net.get_URL(url)
         
         self._dump_json_debug('GameFAQs_scraper_resolve_asset_URL.html', page_data)
         page_data = page_data.replace("\t", "").replace("\n", "")
@@ -237,16 +237,26 @@ class GameFAQs(Scraper):
 
     # Deactivate the recursive search with no platform if no games found with platform.
     # Could be added later.
-    def _get_candidates_from_page(self, search_term, platform, scraper_platform, url = None):
+    def _get_candidates_from_page(self, search_term, platform, scraper_platform, url = None, session = None):
         # --- Get URL data as a text string ---
-        if url is None:
-            url = f'{GameFAQs.base_url}/search_advanced'
-            data = urlencode({'game': search_term, 'platform': scraper_platform})
-            page_data = net.post_URL(url, data)
-        else:
-            page_data = net.get_URL(url)
-        self._dump_file_debug('GameFAQs_get_candidates.html', page_data)
+        if session is None:
+            session = net.start_http_session()
+            session.headers.update({ 'User-Agent': net.USER_AGENT })
+            session.cookies.set('OptanonConsent', 'AwaitingReconsent=false', domain=".gamespot.com")
 
+        if url is None:
+            url = f'{GameFAQs.base_url}/search_advanced?game={search_term}'
+            page_data, http_code = net.get_URL(url, session=session)
+
+            data = urlencode({'game_type': 0, 'game': search_term, 'platform': scraper_platform})
+            page_data, http_code = net.post_URL(url, data, session=session)
+        else:
+            page_data, http_code = net.get_URL(url, session=session)
+        
+        if http_code != 200:
+            self.logger.error(f"Failure retrieving URL {url}")
+
+        self._dump_file_debug('GameFAQs_get_candidates.html', page_data)
         page_data = page_data.replace("\t", "").replace("\n", "")
         # --- Parse game list ---
         # --- First row ---
@@ -263,16 +273,19 @@ class GameFAQs(Scraper):
         for result in regex_results:
             game = self._new_candidate_dic()
             game_platform = result[0]
+            alt_game_platform = result[2].split('/')[1]
             game_year = result[4]
             game_name = text.unescape_HTML(result[3])
             if game_platform.lower() in AKL_compact_platform_GameFaqs_mapping:
                 platform_id = AKL_compact_platform_GameFaqs_mapping[game_platform.lower()]
+            elif alt_game_platform in AKL_compact_platform_GameFaqs_mapping:
+                platform_id = AKL_compact_platform_GameFaqs_mapping[alt_game_platform]
             else:
                 platform_id = 0
 
             game['id']               = result[1]
             game['display_name']     = f"{game_name} ({game_year}) / {game_platform}"
-            game['platform']         = platform
+            game['platform']         = platform_id
             game['scraper_platform'] = scraper_platform
             game['order']            = 1
             game['game_name']        = game_name # Additional GameFAQs scraper field
@@ -414,7 +427,7 @@ class GameFAQs(Scraper):
         cid = candidate['id']
         url = f'{GameFAQs.base_url}/{cid}/images'
         self.logger.debug('GameFAQs._load_assets_from_page() Get asset data from {}'.format(url))
-        page_data = net.get_URL(url)
+        page_data, http_code = net.get_URL(url)
 
         self._dump_file_debug('GameFAQs_load_assets_from_page.html', page_data)
         page_data = page_data.replace("\t", "").replace("\n", "")
@@ -544,6 +557,7 @@ AKL_compact_platform_GameFaqs_mapping = {
     'gamegear': 62,
     'sms': 49,
     'megadrive': 54,
+    'genesis': 54,
     'megacd': 65,
     'saturn': 76,
     'sg1000': 43,
