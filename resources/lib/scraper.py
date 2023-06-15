@@ -160,6 +160,7 @@ class GameFAQs(Scraper):
         game_data['nplayers'] = ''
         game_data['esrb'] = ''
         game_data['plot'] = game_plot
+        game_data['extras']['gamefaq_id'] = cid 
 
         # --- Put metadata in the cache ---
         self.logger.debug(f'GameFAQs.get_metadata() Adding to metadata cache "{self.cache_key}"')
