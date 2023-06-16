@@ -63,10 +63,18 @@ class GameFAQs(Scraper):
         self.regex_meta_dev_a = re.compile(r'<div class="content"><b>Developer/Publisher: </b><a href=".*?">(.*?)</a></div>')
         self.regex_meta_dev_b = re.compile(r'<div class="content"><b>Developer: </b><a href=".*?">(.*?)</a></div>')
         self.regex_meta_plot = re.compile(r'<div class="game_desc">(.*?)</div>')
+        self.regex_meta_rating = re.compile(r'<div class="gamespace_rate_half" title="Average: (.*?) stars from \d*? users">')
+        self.regex_meta_esrb = re.compile(r'<div class="esrb"><p><span title=".*?" class="esrb_logo (.*?)"></span></p></div>')
+        self.regex_meta_nplayers = re.compile(r'<div class="content"><span class="bold">Local Players:</span>&nbsp;<span>(.*?)</span></div>')
+        self.regex_meta_nplayers_online = re.compile(r'<div class="content"><span class="bold">Online Players:</span>&nbsp;<span>(.*?)</span></div>')
+        
+        self.regex_num_of_player = re.compile(r'\d+\-(\d+)')
+
         self.regex_assets = re.compile(r'<div class="head"><h2 class="title">(.+?)</h2></div>(<div class="contrib_jumper">.+?</div>)?<div class="body"><ol class="list flex col5 .*?">(.*?)</ol></div>')
         self.regex_asset_links = re.compile(r'<a href="(?P<lnk>.+?)"><img class="(img100\s)?imgboxart" src="(?P<thumb>.+?)" (alt="(?P<alt>.*?)")?\s?/></a>')
         self.regex_asset_urls = re.compile(r'<img (class="full_boxshot imgboxart cte"\s\s?)?data-img-width="\d+" data-img-height="\d+" data-img="(?P<url>.+?)" (class="full_boxshot imgboxart cte"\s\s?)?src=".+?" alt="(?P<alt>.+?)"(\s/)?>')
-        
+        self.regex_metacritic = re.compile(r'<div class="metacritic"><div title="Metacritic" class="title"> </div><a href="(.*?)"><div class="score score_.*?" title="Metascore .*?">(\d*?)</div></a><a href=".*?">.*?</a></div>')
+
         self.cache_candidates = {}
         self.cache_metadata = {}
         self.cache_assets = {}
@@ -146,10 +154,20 @@ class GameFAQs(Scraper):
         page_data = page_data.replace("\t", "").replace("\n", "")
 
         # --- Parse data ---
-        game_year      = self._parse_year(page_data)
-        game_genre     = self._parse_genre(page_data)
+        game_year = self._parse_year(page_data)
+        game_genre = self._parse_genre(page_data)
         game_developer = self._parse_developer(page_data)
-        game_plot      = self._parse_plot(page_data)
+        game_plot = self._parse_plot(page_data)
+        game_esrb = self._parse_esrb(page_data)
+        game_metacritics = self._parse_metacritics(page_data)
+        game_rating = self._parse_rating(page_data)
+
+        # get data page
+        data_page_data, http_code = net.get_URL(f'{GameFAQs.base_url}/{cid}/data')
+        data_page_data = data_page_data.replace("\t", "").replace("\n", "")
+
+        game_nplayers = self._parse_nplayers(data_page_data)
+        game_nplayers_online = self._parse_nplayers_online(data_page_data)
 
         # --- Build metadata dictionary ---
         game_data = self._new_gamedata_dic()
@@ -157,10 +175,13 @@ class GameFAQs(Scraper):
         game_data['year'] = game_year
         game_data['genre'] = game_genre
         game_data['developer'] = game_developer
-        game_data['nplayers'] = ''
-        game_data['esrb'] = ''
+        game_data['rating'] = game_rating
+        game_data['nplayers'] = game_nplayers
+        game_data['nplayers_online'] = game_nplayers_online
+        game_data['esrb'] = game_esrb
         game_data['plot'] = game_plot
-        game_data['extras']['gamefaq_id'] = cid 
+        game_data['extra']['gamefaq_id'] = cid 
+        game_data['extra'].update(game_metacritics)
 
         # --- Put metadata in the cache ---
         self.logger.debug(f'GameFAQs.get_metadata() Adding to metadata cache "{self.cache_key}"')
@@ -337,8 +358,8 @@ class GameFAQs(Scraper):
         # <li><b>Genre:</b> <a href="/snes/category/163-action-adventure">Action Adventure</a> &raquo; <a href="/snes/category/292-action-adventure-open-world">Open-World</a>
         m_genre = self.regex_meta_genre.search(page_data)
         if m_genre:
-            game_genre = m_genre.group(1)
-        return game_genre
+            return m_genre.group(1)
+        return ''
 
     def _parse_developer(self, page_data):
         # --- Developer and publisher are the same
@@ -365,9 +386,107 @@ class GameFAQs(Scraper):
         # </script>
         m_plot = self.regex_meta_plot.search(page_data)
         if m_plot:
-            game_plot = m_plot.group(1)
-        return game_plot
+            return m_plot.group(1)
+        return ''
+            
+    def _parse_nplayers(self, page_data):
+        # <div class="content">
+        #     <span class="bold">Local Players:</span>&nbsp;
+        #     <span>1 Player</span>
+        # </div>
+        m_players = self.regex_meta_nplayers.search(page_data)
+        if not m_players:
+            return constants.DEFAULT_META_NPLAYERS
         
+        nplayers_str = m_players.group(1)
+        nplayers_str = nplayers_str.replace(' Players', '')
+        nplayers_str = nplayers_str.replace(' Player', '')
+
+        if nplayers_str.isnumeric():
+            return nplayers_str
+
+        match = self.regex_num_of_player.search(nplayers_str)
+        if match is None:
+            return constants.DEFAULT_META_NPLAYERS
+        nplayers_str = match.group(1)
+
+        return nplayers_str
+    
+    def _parse_nplayers_online(self, page_data):
+        # <div class="content">
+            # <span class="bold">Online Players:</span>&nbsp;
+            # <span>Up to 18 Players</span>
+        # </div>
+        m_players = self.regex_meta_nplayers_online.search(page_data)
+        if not m_players:
+            return constants.DEFAULT_META_NPLAYERS
+        
+        nplayers_str = m_players.group(1)
+        nplayers_str = nplayers_str.replace(' Players', '')
+        nplayers_str = nplayers_str.replace(' Player', '')
+        nplayers_str = nplayers_str.replace('Up to ', '')
+
+        if nplayers_str.isnumeric():
+            return nplayers_str
+
+        match = self.regex_num_of_player.search(nplayers_str)
+        if match is None:
+            return constants.DEFAULT_META_NPLAYERS
+        nplayers_str = match.group(1)
+        return nplayers_str
+
+    def _parse_esrb(self, page_data):
+        # <div class="esrb">
+		#	<p><span title="Content is generally suitable for ... language." class="esrb_logo esrb_logo_e"></span></p>
+		# </div>
+        m_esrb = self.regex_meta_esrb.search(page_data)
+        game_esrb = constants.ESRB_PENDING
+        if m_esrb:
+            esrb_code = m_esrb.group(1)
+            esrb_code = esrb_code.replace('esrb_logo_', '')
+            if esrb_code == 'e':
+                game_esrb = constants.ESRB_EVERYONE
+            elif esrb_code == 'ec':
+                game_esrb = constants.ESRB_EARLY
+            elif esrb_code == 'e10':
+                game_esrb = constants.ESRB_EVERYONE_10
+            elif esrb_code == 't':
+                game_esrb = constants.ESRB_TEEN
+            elif esrb_code == 'ao':
+                game_esrb = constants.ESRB_ADULTS_ONLY
+            elif esrb_code == 'm':
+                game_esrb = constants.ESRB_MATURE
+            else:
+                game_esrb = constants.ESRB_PENDING
+                
+        return game_esrb
+    
+    def _parse_rating(self, page_data):
+        # <div class="gamespace_rate_half" title="Average: 3.37 stars from 150 users">
+        m_rating = self.regex_meta_rating.search(page_data)
+        if not m_rating:
+            return None
+        
+        return m_rating.group(1)
+        
+    def _parse_metacritics(self, page_data):
+        # <div class="metacritic">
+		# 	<div title="Metacritic" class="title"> </div>
+		# 	<a href="https://www.metacritic.com/game/pc/cities-skylines?ftag=MCD-06-10aaa1c">
+		# 		<div class="score score_high" title="Metascore from 60 critics">85</div>
+		# 	</a>
+		#	<a href="/pc/404404-cities-skylines-hotels-and-retreats/reviews#mc">more »</a>
+		#</div>
+        m_critics = self.regex_metacritic.search(page_data)
+        if m_critics:
+            critics_lnk = m_critics.group(1)
+            critics_score = m_critics.group(2)
+            return {
+                'metacritics_link': critics_lnk,
+                'metacritics': critics_score
+            }
+        return {}
+    
     # Get ALL available assets for game.
     # Cache the results because this function may be called multiple times for the
     # same candidate game.

@@ -37,6 +37,9 @@ def mocked_gamesfaq(url, params = None, session = None):
 
     elif '/578318/images' in url :
         mocked_html_file = os.path.join(Test_gamefaq_scraper.TEST_ASSETS_DIR, "gamesfaq_castlevania_images.html")
+
+    elif '/578318/data' in url :
+        mocked_html_file = os.path.join(Test_gamefaq_scraper.TEST_ASSETS_DIR, "gamesfaq_castlevania_data.html")
         
     elif '/578318' in url:
         mocked_html_file = os.path.join(Test_gamefaq_scraper.TEST_ASSETS_DIR, "gamesfaq_castlevania.html")
