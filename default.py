@@ -20,15 +20,15 @@ from akl.utils import kodilogging, io, kodi
 from akl.scrapers import ScraperSettings, ScrapeStrategy
 
 # Local modules
-from resources.lib.scraper import GameFaqs
+from resources.lib.scraper import GameFAQs
 
 kodilogging.config() 
 logger = logging.getLogger(__name__)
 
 # --- Addon object (used to access settings) ---
-addon           = xbmcaddon.Addon()
-addon_id        = addon.getAddonInfo('id')
-addon_version   = addon.getAddonInfo('version')
+addon = xbmcaddon.Addon()
+addon_id = addon.getAddonInfo('id')
+addon_version = addon.getAddonInfo('version')
 
 # ---------------------------------------------------------------------------------------------
 # This is the plugin entry point.
@@ -39,11 +39,16 @@ def run_plugin():
     logger.info('addon.id         "{}"'.format(addon_id))
     logger.info('addon.version    "{}"'.format(addon_version))
     logger.info('sys.platform     "{}"'.format(sys.platform))
-    if io.is_android(): logger.info('OS               "Android"')
-    if io.is_windows(): logger.info('OS               "Windows"')
-    if io.is_osx():     logger.info('OS               "OSX"')
-    if io.is_linux():   logger.info('OS               "Linux"')
-    for i in range(len(sys.argv)): logger.info('sys.argv[{}] "{}"'.format(i, sys.argv[i]))
+    if io.is_android():
+        logger.info('OS               "Android"')
+    if io.is_windows():
+        logger.info('OS               "Windows"')
+    if io.is_osx():
+        logger.info('OS               "OSX"')
+    if io.is_linux():
+        logger.info('OS               "Linux"')
+    for i in range(len(sys.argv)):
+        logger.info('sys.argv[{}] "{}"'.format(i, sys.argv[i]))
     
     parser = argparse.ArgumentParser(prog='script.akl.gamefaqs')
     parser.add_argument('--cmd', help="Command to execute", choices=['launch', 'scan', 'scrape', 'configure'])
@@ -62,7 +67,8 @@ def run_plugin():
         kodi.dialog_OK(text=parser.usage)
         return
         
-    if args.type == constants.AddonType.SCRAPER.name and args.cmd == 'scrape': run_scraper(args)
+    if args.type == constants.AddonType.SCRAPER.name and args.cmd == 'scrape':
+        run_scraper(args)
     else:
         kodi.dialog_OK(text=parser.format_help())
         
@@ -73,14 +79,14 @@ def run_plugin():
 # ---------------------------------------------------------------------------------------------
 def run_scraper(args):
     logger.debug('========== run_scraper() BEGIN ==================================================')
-    pdialog             = kodi.ProgressDialog()
+    pdialog = kodi.ProgressDialog()
     
-    settings            = ScraperSettings.from_settings_dict(args.settings)
-    scraper_strategy    = ScrapeStrategy(
+    settings = ScraperSettings.from_settings_dict(args.settings)
+    scraper_strategy = ScrapeStrategy(
                             args.server_host, 
                             args.server_port, 
                             settings, 
-                            GameFaqs(), 
+                            GameFAQs(), 
                             pdialog)
                         
     if args.rom_id is not None:
