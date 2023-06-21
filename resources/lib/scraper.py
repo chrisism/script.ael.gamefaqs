@@ -386,7 +386,9 @@ class GameFAQs(Scraper):
         # </script>
         m_plot = self.regex_meta_plot.search(page_data)
         if m_plot:
-            return m_plot.group(1)
+            plot_str = m_plot.group(1)
+            plot_str = text.remove_HTML_tags(plot_str)
+            return plot_str
         return ''
             
     def _parse_nplayers(self, page_data):
