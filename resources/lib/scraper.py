@@ -25,9 +25,10 @@ from urllib.parse import urlencode
 
 # --- AKL packages ---
 from akl import constants, platforms, settings
-from akl.utils import io, net, kodi, text
+from akl.utils import io, net, text
 from akl.scrapers import Scraper
 from akl.api import ROMObj
+
 
 # ------------------------------------------------------------------------------------------------
 # GameFAQs online scraper.
@@ -56,7 +57,7 @@ class GameFAQs(Scraper):
     # --- Constructor ----------------------------------------------------------------------------
     def __init__(self):
         self.logger = logging.getLogger(__name__)
-        
+
         self.regex_candidates = re.compile(r'<tr><td>(.*?)</td><td><a class="log_search" data-row="[0-9]+" data-col="1" data-pid="([0-9]+)" href="(.*?)">(.*?)</a></td><td>(.*?)</td><td>(.*?)</td></tr>')
         self.regex_meta_year = re.compile(r'<div class="content"><b>Release:</b> <a href=".*?">(.*?)</a></div>')
         self.regex_meta_genre = re.compile(r'<div class="content"><b>Genre:</b> <a href=".*?">(.*?)</a>')
@@ -83,7 +84,7 @@ class GameFAQs(Scraper):
         cache_dir = settings.getSettingAsFilePath('scraper_cache_dir')
         super(GameFAQs, self).__init__(cache_dir)
 
-    # --- Base class abstract methods ------------------------------------------------------------    
+    # --- Base class abstract methods ------------------------------------------------------------
     def get_name(self):
         return 'GameFAQs'
 
@@ -129,7 +130,7 @@ class GameFAQs(Scraper):
 
         # Order list based on score
         game_list = self._get_candidates_from_page(search_term, platform, scraper_platform)
-        game_list.sort(key = lambda result: result['order'], reverse = True)
+        game_list.sort(key=lambda result: result['order'], reverse=True)
 
         return game_list
 
@@ -190,7 +191,7 @@ class GameFAQs(Scraper):
         return game_data
 
     def get_assets(self, asset_info_id: str, status_dic):
-         # --- If scraper is disabled return immediately and silently ---
+        # --- If scraper is disabled return immediately and silently ---
         if self.scraper_disabled:
             self.logger.debug('GameFAQs.get_assets() Scraper disabled. Returning empty data.')
             return []
@@ -222,7 +223,7 @@ class GameFAQs(Scraper):
         asset_id = selected_asset['asset_ID']
         self.logger.debug(f'GameFAQs._scraper_resolve_asset_URL() Get image from "{url}" for asset type {asset_id}')
         page_data, http_code = net.get_URL(url)
-        
+
         self._dump_json_debug('GameFAQs_scraper_resolve_asset_URL.html', page_data)
         page_data = page_data.replace("\t", "").replace("\n", "")
 
@@ -259,11 +260,11 @@ class GameFAQs(Scraper):
 
     # Deactivate the recursive search with no platform if no games found with platform.
     # Could be added later.
-    def _get_candidates_from_page(self, search_term, platform, scraper_platform, url = None, session = None):
+    def _get_candidates_from_page(self, search_term, platform, scraper_platform, url=None, session=None):
         # --- Get URL data as a text string ---
         if session is None:
             session = net.start_http_session()
-            session.headers.update({ 'User-Agent': net.USER_AGENT })
+            session.headers.update({'User-Agent': net.USER_AGENT})
             session.cookies.set('OptanonConsent', 'AwaitingReconsent=false', domain=".gamespot.com")
 
         if url is None:
@@ -305,12 +306,12 @@ class GameFAQs(Scraper):
             else:
                 platform_id = 0
 
-            game['id']               = result[1]
-            game['display_name']     = f"{game_name} ({game_year}) / {game_platform}"
-            game['platform']         = platform_id
+            game['id'] = result[1]
+            game['display_name'] = f"{game_name} ({game_year}) / {game_platform}"
+            game['platform'] = platform_id
             game['scraper_platform'] = scraper_platform
-            game['order']            = 1
-            game['game_name']        = game_name # Additional GameFAQs scraper field
+            game['order'] = 1
+            game['game_name'] = game_name  # Additional GameFAQs scraper field
             
             # Increase search score based on our own search.
             # In the future use an scoring algortihm based on Levenshtein distance.
@@ -333,7 +334,7 @@ class GameFAQs(Scraper):
         #     game_list = game_list + self._get_candidates_from_page(search_term, no_platform, new_url)
 
         # --- Sort game list based on the score ---
-        game_list.sort(key = lambda result: result['order'], reverse = True)
+        game_list.sort(key=lambda result: result['order'], reverse=True)
         return game_list
               
     #
@@ -508,7 +509,7 @@ class GameFAQs(Scraper):
     
     # Load assets from assets web page.
     # The Game Images URL shows a page with boxart and screenshots thumbnails.
-    # Boxart can be diferent depending on the ROM/game region. Each region has then a 
+    # Boxart can be diferent depending on the ROM/game region. Each region has then a
     # separate page with the full size artwork (boxfront, boxback, etc.)
     #
     # TODO In the assets web page only the Boxfront is shown. The Boxback and Spine are in the
@@ -585,11 +586,11 @@ class GameFAQs(Scraper):
                         continue
 
                     asset_data = self._new_assetdata_dic()
-                    asset_data['asset_ID']     = asset_id
+                    asset_data['asset_ID'] = asset_id
                     asset_data['display_name'] = image_data['alt'] if image_data['alt'] else ''
-                    asset_data['url_thumb']    = image_data['thumb']
-                    asset_data['url']          = image_data['lnk']
-                    asset_data['is_on_page']   = True
+                    asset_data['url_thumb'] = image_data['thumb']
+                    asset_data['url'] = image_data['lnk']
+                    asset_data['is_on_page'] = True
                     assets_list.append(asset_data)
 
         # --- Recursively load more image pages ---
@@ -600,11 +601,13 @@ class GameFAQs(Scraper):
         #     assets_list = assets_list + self._load_assets_from_url(new_url)
 
         return assets_list
-    
+
+
 # ------------------------------------------------------------------------------------------------
 # GameFaqs supported platforms mapped to AKL platforms.
 # ------------------------------------------------------------------------------------------------
 DEFAULT_PLAT_GAMEFAQS = 0
+
 
 def convert_AKL_platform_to_GameFaqs(platform_long_name) -> int:
     matching_platform = platforms.get_AKL_platform(platform_long_name)
@@ -624,6 +627,7 @@ def convert_GameFaqs_platform_to_AKL_platform(moby_platform) -> platforms.Platfo
         return platforms.get_AKL_platform_by_compact(platform_compact_name)
         
     return platforms.get_AKL_platform_by_compact(platforms.PLATFORM_UNKNOWN_COMPACT)
+
 
 AKL_compact_platform_GameFaqs_mapping = {
     '3do': 61,
@@ -670,9 +674,9 @@ AKL_compact_platform_GameFaqs_mapping = {
     'gamecube': 99,
     'nes': 41,
     'snes': 63,
-    'switch': 124, 
+    'switch': 124,
     'vb': 83,
-    'wii': 114, 
+    'wii': 114,
     'wiiu': 118,
     '32x': 74,
     'dreamcast': 67,
@@ -692,7 +696,7 @@ AKL_compact_platform_GameFaqs_mapping = {
     'ps3': 113,
     'ps4': 120,
     'psp': 109,
-    'psvita': 117    
+    'psvita': 117
 }
 
 GameFaqs_AKL_compact_platform_mapping = {}
