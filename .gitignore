@@ -8,7 +8,6 @@ __pycache__/
 
 # Distribution / packaging
 .Python
-build/
 develop-eggs/
 dist/
 downloads/
@@ -133,3 +132,4 @@ dmypy.json
 node_modules/
 .vscode/
 .addon
+tests/output/

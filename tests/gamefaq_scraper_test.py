@@ -5,51 +5,54 @@ from unittest.mock import MagicMock, patch
 import json
 import logging
 
-from fakes import FakeProgressDialog, random_string
+from tests.fakes import FakeProgressDialog, FakeFile, random_string
 
 logging.basicConfig(format = '%(asctime)s %(module)s %(levelname)s: %(message)s',
                 datefmt = '%m/%d/%Y %I:%M:%S %p', level = logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 from resources.lib.scraper import GameFAQs
-from ael.scrapers import ScrapeStrategy, ScraperSettings
+from akl.scrapers import ScrapeStrategy, ScraperSettings
 
-from ael.api import ROMObj
-from ael import constants
-from ael.utils import net
+from akl.api import ROMObj
+from akl import constants
+from akl.utils import net
         
 def read_file(path):
     with open(path, 'r') as f:
         return f.read()
 
-def mocked_gamesfaq(url, params = None):
+def mocked_gamesfaq(url, params = None, session = None):
 
     mocked_html_file = ''
 
     if '/search' in url:
-        mocked_html_file = Test_gamefaq_scraper.TEST_ASSETS_DIR + "\\gamesfaq_search.html"
+        mocked_html_file = os.path.join(Test_gamefaq_scraper.TEST_ASSETS_DIR, "gamesfaq_search.html")
         
-    elif '/578318-castlevania/images/21' in url:
-        mocked_html_file = Test_gamefaq_scraper.TEST_ASSETS_DIR + "\\gamesfaq_castlevania_snap.html"
+    elif '/578318-castlevania/images?pid' in url:
+        mocked_html_file = os.path.join(Test_gamefaq_scraper.TEST_ASSETS_DIR, "gamesfaq_castlevania_snap.html")
         
-    elif '/578318-castlevania/images/135454' in url:
-        mocked_html_file = Test_gamefaq_scraper.TEST_ASSETS_DIR + "\\gamesfaq_castlevania_boxfront.html"
+    elif '/578318-castlevania/boxes' in url:
+        mocked_html_file = os.path.join(Test_gamefaq_scraper.TEST_ASSETS_DIR, "gamesfaq_castlevania_boxfront.html")
 
-    elif '/578318-castlevania/images' in url:
-        mocked_html_file = Test_gamefaq_scraper.TEST_ASSETS_DIR + "\\gamesfaq_castlevania_images.html"
+    elif '/578318/images' in url :
+        mocked_html_file = os.path.join(Test_gamefaq_scraper.TEST_ASSETS_DIR, "gamesfaq_castlevania_images.html")
+
+    elif '/578318/data' in url :
+        mocked_html_file = os.path.join(Test_gamefaq_scraper.TEST_ASSETS_DIR, "gamesfaq_castlevania_data.html")
         
-    elif '/578318-castlevania' in url:
-        mocked_html_file = Test_gamefaq_scraper.TEST_ASSETS_DIR + "\\gamesfaq_castlevania.html"
+    elif '/578318' in url:
+        mocked_html_file = os.path.join(Test_gamefaq_scraper.TEST_ASSETS_DIR, "gamesfaq_castlevania.html")
 
     elif '.jpg' in url:
         print('reading fake image file')
-        return read_file(Test_gamefaq_scraper.TEST_ASSETS_DIR + "\\test.jpg")
+        return read_file(os.path.join(Test_gamefaq_scraper.TEST_ASSETS_DIR, "test.jpg"))
 
     if mocked_html_file == '':
         return net.get_URL_oneline(url)
 
     print ('reading mocked data from file: {}'.format(mocked_html_file))
-    return read_file(mocked_html_file)
+    return read_file(mocked_html_file), 200
 
 class Test_gamefaq_scraper(unittest.TestCase):
     
@@ -70,8 +73,9 @@ class Test_gamefaq_scraper(unittest.TestCase):
         
     @patch('resources.lib.scraper.net.get_URL', side_effect = mocked_gamesfaq)
     @patch('resources.lib.scraper.net.post_URL', side_effect = mocked_gamesfaq)
-    @patch('ael.api.client_get_rom')
-    def test_scraping_metadata_for_game(self, api_rom_mock: MagicMock, mock_post, mock_get):        
+    @patch('akl.scrapers.settings.getSettingAsFilePath', autospec=True, return_value=FakeFile("/test"))
+    @patch('akl.api.client_get_rom')
+    def test_scraping_metadata_for_game(self, api_rom_mock: MagicMock, settings_file_mock, mock_post, mock_get):        
         # arrange
         settings = ScraperSettings()
         settings.scrape_metadata_policy = constants.SCRAPE_POLICY_SCRAPE_ONLY
@@ -80,13 +84,13 @@ class Test_gamefaq_scraper(unittest.TestCase):
         rom_id = random_string(5)
         rom = ROMObj({
             'id': rom_id,
-           'scanned_data': { 'file':Test_gamefaq_scraper.TEST_ASSETS_DIR + '\\castlevania.zip'},
+            'scanned_data': { 'file':Test_gamefaq_scraper.TEST_ASSETS_DIR + '\\castlevania.zip'},
             'platform': 'Nintendo NES'
         })
         api_rom_mock.return_value = rom
         
-        target = ScrapeStrategy(None, 0, settings, GameFAQs(), FakeProgressDialog())
 
+        target = ScrapeStrategy(None, 0, settings, GameFAQs(), FakeProgressDialog())
         # act
         actual = target.process_single_rom(rom_id)
         
@@ -99,7 +103,7 @@ class Test_gamefaq_scraper(unittest.TestCase):
     @patch('resources.lib.scraper.net.post_URL', side_effect = mocked_gamesfaq)
     @patch('resources.lib.scraper.net.download_img')
     @patch('resources.lib.scraper.io.FileName.scanFilesInPath', autospec=True)
-    @patch('ael.api.client_get_rom')
+    @patch('akl.api.client_get_rom')
     def test_scraping_assets_for_game(self, api_rom_mock: MagicMock, scanner_mock, mock_imgs, mock_post, mock_get):
         # arrange
         settings = ScraperSettings()
