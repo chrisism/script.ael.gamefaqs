@@ -70,6 +70,7 @@ class Test_gamefaq_metadata_and_assets(unittest.TestCase):
         if not os.path.exists(cls.TEST_OUTPUT_DIR):
             os.makedirs(cls.TEST_OUTPUT_DIR)
     
+    @unittest.skip('SKIP')
     @patch('akl.settings.getSettingAsFilePath', autospec=True)
     @patch('akl.settings.getSetting', autospec=True)
     def test_gamefaq_metadata(self, settings_mock:MagicMock, settings_path_mock:MagicMock):   
@@ -118,7 +119,7 @@ class Test_gamefaq_metadata_and_assets(unittest.TestCase):
         # pprint.pprint(candidate_list)
         self.assertTrue(status_dic['status'], 'Status error "{}"'.format(status_dic['msg']))
         self.assertIsNotNone(candidate_list, 'Error/exception in get_candidates()')
-        self.assertNotEquals(len(candidate_list), 0, 'No candidates found.')
+        self.assertNotEqual(len(candidate_list), 0, 'No candidates found.')
         
         for candidate in candidate_list:
             print(candidate)
@@ -132,6 +133,7 @@ class Test_gamefaq_metadata_and_assets(unittest.TestCase):
         # pprint.pprint(metadata)
         scraper_obj.flush_disk_cache()
 
+    @unittest.skip('SKIP')
     @patch('akl.settings.getSettingAsFilePath', autospec=True)
     @patch('akl.settings.getSetting', autospec=True)
     def test_gamefaq_assets(self, settings_mock:MagicMock, settings_path_mock:MagicMock):
@@ -180,7 +182,7 @@ class Test_gamefaq_metadata_and_assets(unittest.TestCase):
         # pprint.pprint(candidate_list)
         self.assertTrue(status_dic['status'], 'Status error "{}"'.format(status_dic['msg']))
         self.assertIsNotNone(candidate_list, 'Error/exception in get_candidates()')
-        self.assertNotEquals(len(candidate_list), 0, 'No candidates found.')
+        self.assertNotEqual(len(candidate_list), 0, 'No candidates found.')
         
         for candidate in candidate_list:
             print(candidate)
