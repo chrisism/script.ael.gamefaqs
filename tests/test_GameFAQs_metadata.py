@@ -118,7 +118,7 @@ class Test_gamefaq_metadata_and_assets(unittest.TestCase):
         # pprint.pprint(candidate_list)
         self.assertTrue(status_dic['status'], 'Status error "{}"'.format(status_dic['msg']))
         self.assertIsNotNone(candidate_list, 'Error/exception in get_candidates()')
-        self.assertNotEquals(len(candidate_list), 0, 'No candidates found.')
+        self.assertNotEqual(len(candidate_list), 0, 'No candidates found.')
         
         for candidate in candidate_list:
             print(candidate)
@@ -180,7 +180,7 @@ class Test_gamefaq_metadata_and_assets(unittest.TestCase):
         # pprint.pprint(candidate_list)
         self.assertTrue(status_dic['status'], 'Status error "{}"'.format(status_dic['msg']))
         self.assertIsNotNone(candidate_list, 'Error/exception in get_candidates()')
-        self.assertNotEquals(len(candidate_list), 0, 'No candidates found.')
+        self.assertNotEqual(len(candidate_list), 0, 'No candidates found.')
         
         for candidate in candidate_list:
             print(candidate)
